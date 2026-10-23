@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kho APK Sideload Android</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: 30px auto; background: #1e1e1e; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h1 { color: #4caf50; font-size: 24px; margin-bottom: 5px; }
+        .sub-title { font-size: 14px; color: #888; margin-bottom: 20px; }
+        #countdown { font-size: 28px; font-weight: bold; color: #ff4757; background: #2f3542; padding: 12px; display: inline-block; border-radius: 8px; margin-bottom: 25px; letter-spacing: 1px; }
+        .btn { background-color: #4caf50; color: white; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; box-sizing: border-box; margin-bottom: 15px; text-transform: uppercase; }
+        .btn:hover { background-color: #45a049; transform: scale(1.02); }
+        .btn-reset { background-color: #57606f; }
+        .btn-reset:hover { background-color: #4b525e; }
+        #status-msg { margin-top: 15px; font-size: 14px; color: #ffa502; font-weight: bold; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; }
+        .overlay h2 { color: #ff4757; font-size: 26px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Cổng Cài Ứng Dụng Android</h1>
+        <p class="sub-title">Trải nghiệm cài file APK trực tiếp ra màn hình chính</p>
+        
+        <!-- Đồng hồ đếm ngược 2 tiếng -->
+        <div id="countdown">02:00:00</div>
+
+        <!-- Nút xử lý APK thông minh -->
+        <button id="apk-action-btn" class="btn" onclick="handleApkInstall()">Kiểm tra & Cài đặt APK</button>
+        
+        <!-- Nút reset thủ công nếu muốn chủ động bắt đầu lại -->
+        <button class="btn btn-reset" onclick="resetSession()">Khởi động lại (Reset 2 Tiếng)</button>
+
+        <div id="status-msg">Hệ thống sẵn sàng. Bấm nút để kiểm tra file APK.</div>
+    </div>
+
+    <!-- Màn hình khóa khi hết 2 tiếng -->
+    <div id="overlay-screen" class="overlay">
+        <h2>Đã hết thời gian 2 tiếng!</h2>
+        <p>Vui lòng bấm nút bên dưới để đặt lại thời gian và tiếp tục sử dụng.</p>
+        <button class="btn" style="width: 250px;" onclick="resetSession()">Bật Lại Hệ Thống</button>
+    </div>
+
+    <script>
+        // CẤU HÌNH TÊN FILE VÀ LINK TẢI (Thay đổi theo file APK của bạn)
+        const APK_FILE_NAME = "game_mod_2gb.apk"; 
+        const APK_DOWNLOAD_URL = "https://example.com"; // Thay link APK thật của bạn vào đây
+
+        const TWO_HOURS = 120 * 60; // 7200 giây
+        let timeLeft = TWO_HOURS;
+        let timerInterval;
+
+        const countdownEl = document.getElementById('countdown');
+        const overlayScreen = document.getElementById('overlay-screen');
+        const actionBtn = document.getElementById('apk-action-btn');
+        const statusMsg = document.getElementById('status-msg');
+
+        // 1. CHẠY BỘ ĐẾM NGƯỢC 2 TIẾNG
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                let hours = Math.floor(timeLeft / 3600);
+                let minutes = Math.floor((timeLeft % 3600) / 60);
+                let seconds = timeLeft % 60;
+
+                // Định dạng hiển thị hh:mm:ss
+                countdownEl.innerHTML = 
+                    `${hours < 10 ? '0' : ''}${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+                // Cảnh báo trước khi hết giờ 5 phút
+                if (timeLeft === 300) {
+                    alert("⚠️ Chỉ còn 5 phút! Hệ thống trang web sắp tự động ngắt kết nối.");
+                }
+
+                // Khi hết 2 tiếng
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    overlayScreen.style.display = 'flex'; // Khóa màn hình web lại
+                }
+                timeLeft--;
+            }, 1000);
+        }
+
+        // 2. CƠ CHẾ KHỞI ĐỘNG LẠI (RESET VỀ 2 TIẾNG)
+        function resetSession() {
+            timeLeft = TWO_HOURS;
+            overlayScreen.style.display = 'none';
+            statusMsg.innerHTML = "Hệ thống đã được làm mới. Thời gian reset về 2 tiếng!";
+            startTimer();
+        }
+
+        // 3. XỬ LÝ NHẬN DIỆN VÀ CÀI ĐẶT APK THÔNG MINH
+        async function handleApkInstall() {
+            statusMsg.innerHTML = "Đang quét bộ nhớ thiết bị...";
+
+            // Kiểm tra xem trình duyệt có hỗ trợ công nghệ Web File System API không (Bắt buộc dùng Chrome/Edge trên Android)
+            if ('showOpenFilePicker' in window || (navigator.storage && navigator.storage.getDirectory)) {
+                try {
+                    // Mẹo tận dụng tính năng kiểm tra file có sẵn bằng cách kích hoạt hộp thoại chọn file của máy
+                    statusMsg.innerHTML = "Đang kiểm tra thư mục cài đặt gốc...";
+                    
+                    // Tạo một liên kết tải ẩn
+                    const link = document.createElement('a');
+                    link.href = APK_DOWNLOAD_URL;
+                    link.download = APK_FILE_NAME;
+                    
+                    // Hệ điều hành Android sẽ tự check: Nếu trùng tên file và dung lượng đã có sẵn trong mục /Download, 
+                    // Trình duyệt sẽ không tải lại nữa mà mở trực tiếp Trình cài đặt gói (Package Installer) của điện thoại lên.
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    statusMsg.innerHTML = "Đang mở trình cài đặt APK ra màn hình chính!";
+                } catch (err) {
+                    statusMsg.innerHTML = "Lỗi kích hoạt file: " + err.message;
+                }
+            } else {
+                // Phương án dự phòng cho các trình duyệt cũ: Tiến hành tải và kích hoạt cài đặt thông thường
+                statusMsg.innerHTML = "Đang tải xuống và kích hoạt gói cài đặt APK...";
+                window.location.href = APK_DOWNLOAD_URL;
+            }
+        }
+
+        // Tự động chạy bộ đếm ngược ngay khi vừa mở trang web
+        startTimer();
+    </script>
+</body>
+</html>
